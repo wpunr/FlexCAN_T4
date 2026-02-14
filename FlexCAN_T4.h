@@ -88,8 +88,13 @@ typedef struct CANFD_message_t {
   bool seq = 0;         // sequential frames
 } CANFD_message_t;
 
-typedef void (*_MB_ptr)(const CAN_message_t &msg); /* mailbox / global callbacks */
-typedef void (*_MBFD_ptr)(const CANFD_message_t &msg); /* mailbox / global callbacks */
+#ifdef _FLEXCAN_STD_FUNCTION
+using _MB_ptr = std::function<void(const CAN_message_t &msg)>;
+using _MBFD_ptr = std::function<void(const CANFD_message_t &msg)>;
+#else
+typedef void (*_MB_ptr)(const CAN_message_t &msg, void *context); /* mailbox / global callbacks */
+typedef void (*_MBFD_ptr)(const CANFD_message_t &msg, void *context); /* mailbox / global callbacks */
+#endif
 
 
 typedef enum FLEXCAN_PINS {
@@ -196,7 +201,7 @@ typedef struct CANFD_timings_t {
   double propdelay = 190;
   double bus_length = 1;
   double sample = 75;
-  FLEXCAN_CLOCK clock = CLK_24MHz; 
+  FLEXCAN_CLOCK clock = CLK_24MHz;
 } CANFD_timings_t;
 
 typedef enum FLEXCAN_IDE {
@@ -395,7 +400,7 @@ FCTPFD_CLASS class FlexCAN_T4FD : public FlexCAN_T4_Base {
   private:
     volatile bool isEventsUsed = 0;
     uint64_t readIFLAG() { return (((uint64_t)FLEXCANb_IFLAG2(_bus) << 32) | FLEXCANb_IFLAG1(_bus)); }
-    uint32_t mailbox_offset(uint8_t mailbox, uint8_t &maxsize); 
+    uint32_t mailbox_offset(uint8_t mailbox, uint8_t &maxsize);
     void writeTxMailbox(uint8_t mb_num, const CANFD_message_t &msg);
     bool setBaudRate(CANFD_timings_t config, uint8_t nominal_choice, uint8_t flexdata_choice, FLEXCAN_RXTX listen_only = TX, bool advanced = 0);
     int getFirstTxBox();
@@ -419,9 +424,9 @@ FCTPFD_CLASS class FlexCAN_T4FD : public FlexCAN_T4_Base {
     void writeIMASKBit(uint8_t mb_num, bool set = 1);
     uint8_t busNumber;
     uint8_t mailbox_reader_increment = 0;
-    uint32_t nvicIrq = 0; 
-    uint8_t dlc_to_len(uint8_t val); 
-    uint8_t len_to_dlc(uint8_t val); 
+    uint32_t nvicIrq = 0;
+    uint8_t dlc_to_len(uint8_t val);
+    uint8_t len_to_dlc(uint8_t val);
     uint32_t setBaudRateFD(CANFD_timings_t config, uint32_t flexdata_choice, bool advanced); /* internally used */
     void mbCallbacks(const FLEXCAN_MAILBOX &mb_num, const CANFD_message_t &msg);
     _MBFD_ptr _mbHandlers[64]; /* individual mailbox handlers */
@@ -551,7 +556,7 @@ FCTP_CLASS class FlexCAN_T4 : public FlexCAN_T4_Base {
     void writeIFLAGBit(uint8_t mb_num);
     void writeIMASK(uint64_t value);
     void writeIMASKBit(uint8_t mb_num, bool set = 1);
-    uint32_t nvicIrq = 0; 
+    uint32_t nvicIrq = 0;
     uint32_t currentBitrate = 0UL;
     uint8_t mailbox_reader_increment = 0;
     uint8_t busNumber;
